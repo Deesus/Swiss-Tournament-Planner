@@ -1,4 +1,5 @@
-# Swiss-system Tournament Planner 
+# Swiss-system Tournament Planner
+
 ##### version 0.86
 
 ### Schedule rank-based tournament matchups
