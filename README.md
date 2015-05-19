@@ -1,4 +1,5 @@
-# Swiss-system Tournament Planner version 0.86
+# Swiss-system Tournament Planner 
+##### version 0.86
 
 ### Schedule rank-based tournament matchups
 The **Swiss-system Tournament Planner** is a Python module that implements the [Swiss-system](https://en.wikipedia.org/wiki/Swiss-system_tournament) for **scheduling player pairing in each round in a game tournament**. The Swiss-system is non-elimination tournament format where all participants play multiple rounds of competition before the final rankings -- based on wins and opponent strength -- are determined. The module supports multiple simultaneous tournaments.
