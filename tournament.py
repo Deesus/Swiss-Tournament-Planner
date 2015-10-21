@@ -163,24 +163,13 @@ def player_standings(tournament_id=0):
         return output_
 
     # Find number of matches played per player:
-    cursor.execute("""CREATE OR REPLACE VIEW temp_matches AS
-             SELECT players.id, COUNT(players.id)
-             AS temp_games_played
+    cursor.execute("""CREATE OR REPLACE VIEW num_matches AS
+             SELECT players.id, COALESCE(COUNT(players.id), 0)
+             AS games_played
              FROM players, matches
              WHERE (players.id = winner_id OR players.id = loser_id)
              AND matches.tournament_id = %s
-             GROUP BY players.id;""", (tournament_id,))
-
-    cursor.execute("""CREATE OR REPLACE VIEW num_matches AS
-             SELECT DISTINCT subQuery.ID, games_played
-             FROM (SELECT players.id AS ID,
-                   COALESCE(SUM(temp_games_played), 0)
-                   AS games_played
-                   FROM players LEFT JOIN temp_matches
-                   ON players.id = temp_matches.id
-                   GROUP BY players.id)
-                   AS subQuery, matches
-             WHERE matches.tournament_id = %s
+             GROUP BY players.id
              ORDER BY games_played DESC;""", (tournament_id,))
 
     # Find number of matches won per player:
@@ -294,63 +283,56 @@ def swiss_pairings(tournament_id=0):
 #############################
 
 if __name__ == "__main__":
-    # clear data:
-    delete_matches()
-    delete_players()
+    def test_omw():
+        """Tests the congruity of Opponent Match Wins
 
-    # register players:
-    players = ["Dee", "Temur", "Annie", "Adam", "Shikhikhutug",
-               "Lakshmi", "Yuji", "Bleda", "Attila", "Marie"]
-    p0, p1, p2, p3, p4, p5, p6, p7, p8, p9 = \
+        If players have same number of wins, OMW ranks players by opponents'
+        wins. This test case checks for OMW congruity.
+        """
+
+        # clear data:
+        delete_matches()
+        delete_players()
+
+        # register players:
+        players = ["Attila", "Bleda", "Rugila", "Ernak", "Nimrod",
+                "Temujin", "Subutai", "Ogedei", "Toregene", "Kublai"]
         [register_player(x) for x in players]
 
-    # function for printing tests:
-    def print_out_test_results(tournament_id):
-        print '# of players -- tournament #%s:' % tournament_id
-        print count_players(tournament_id), "\n"
-        print 'standings -- tournament #%s:' % tournament_id
-        print player_standings(tournament_id), "\n"
-        print 'swissPairings -- tournament #%s:' % tournament_id
-        print swiss_pairings(tournament_id), "\n"
+        standings = player_standings()
+        [id0, id1, id2, id3, id4, id5, id6, id7, id8, id9] = \
+        [row[0] for row in standings]
 
-    ##################################################
-    # tournament #16:
-    # report scores:
-    [report_match(x[0], x[1], 16) for x in
-     [(p0, p3), (p6, p3), (p6, p1), (p0, p4), (p4, p1)]]
+        # report matches:
+        report_match(id0, id9)
+        report_match(id1, id8)
+        report_match(id2, id7)
+        report_match(id3, id6)
+        report_match(id4, id5)
+        report_match(id0, id1)
+        report_match(id2, id3)
+        report_match(id4, id5)
+        report_match(id6, id7)
+        report_match(id8, id9)
+        report_match(id0, id2)
+        report_match(id1, id3)
+        report_match(id6, id8)
+        report_match(id6, id2)
 
-    print_out_test_results(16)
-    # expected count: 5
-    # expected standings: 'Dee', 'Yuji', 'Shikhikhutug', 'Adam', 'Temur'
-    # expected pairings: ('Dee', 'Yuji'), ('Shikhikhutug', 'Adam')
+        # check results (first 8 players):
+        standings = player_standings()
+        correct_results = frozenset([id0, id6, id2, id1, id4, id3, id8, id7])
+        user_results = frozenset([row[0] for row in standings[:8]])
 
-    # more scores to report:
-    [report_match(x[0], x[1], 16) for x in
-     [(p0, p6), (p4, p3), (p6, p1), (p2, p5), (p0, p4), (p2, p8)]]
+        if correct_results != user_results:
+            print "Expected:", correct_results
+            print "Recieved:", user_results
+            raise ValueError("Incorrect player rank!")
 
-    print_out_test_results(16)
-    # expected count: 8
-    # expected standings: 'Dee', 'Yuji', 'Shikhikhutug', 'Annie',
-    # 'Adam', 'Temur', 'Lakshmi', 'Attila'
-    # expected pairs: same as standings
+        print "OMW is implemented correctly"
 
-    ##################################################
-    # tournament #0:
-    # standings before any matches:
-    print "standings -- tournament #0:"
-    print player_standings(), "\n"
-    # expected result: all registered players with 0 wins 0 matches
-
-    # report scores:
-    [report_match(x[0], x[1]) for x in
-     [(p0, p1), (p2, p3), (p3, p1), (p0, p2)]]
-
-    print_out_test_results(0)
-    # expected count: 10 -- all registered players
-    # expected standings: 'Dee', 'Annie', 'Adam', 'Temur' + remaining
-    # expected pairings: ('Dee', 'Annie'), ('Adam', 'Temur') + remaining
-
-    ##################################################
-    # clear data:
-    delete_matches()
-    delete_players()
+        # clear data:
+        delete_matches()
+        delete_players()
+    #############################
+    test_omw()
