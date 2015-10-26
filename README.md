@@ -11,9 +11,8 @@ The **Swiss-system Tournament Planner** is a Python module that implements the [
 3. Extract the zipped files to your Vagrant directory.
 4. From the terminal, cd to your `/vagrant` directory.
 5. Type `vagrant up` to launch the virtual machine. Then type `vagrant ssh` to log in.
-6. Cd to the `/tournament` folder: `cd /vagrant/tournament`
-7. Connect to postgreSQL with the command `psql`
-8. Finally, you can setup the database with `\i tournament.sql;`
+6. In the VM, `cd` to the `/tournament` folder.
+7. Setup the PostgreSQL database with the command, `psql -f tournament.sql`
 
 ### Usage
 Add players into database with the `register_player()` function which takes a single string argument.
