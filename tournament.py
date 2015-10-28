@@ -162,43 +162,7 @@ def player_standings(tournament_id=0):
         db.close()
         return output_
 
-    # Find number of matches played per player:
-    cursor.execute("""CREATE OR REPLACE VIEW num_matches AS
-             SELECT players.id, COALESCE(COUNT(players.id), 0)
-             AS games_played
-             FROM players, matches
-             WHERE (players.id = winner_id OR players.id = loser_id)
-             AND matches.tournament_id = %s
-             GROUP BY players.id
-             ORDER BY games_played DESC;""", (tournament_id,))
-
-    # Find number of matches won per player:
-    cursor.execute("""CREATE OR REPLACE VIEW games_won AS
-             SELECT players.id as id, players.name,
-             COUNT(subQuery.winner_id) AS wins
-             FROM players LEFT JOIN (SELECT winner_id
-                                     FROM matches
-                                     WHERE matches.tournament_id = %s)
-                                     AS subQuery
-             ON players.id = subQuery.winner_id
-             GROUP BY players.id;""", (tournament_id,))
-
-    # Find opponent match wins (omw):
-    # (subquery creates 2 columns of id & every opponent he has played)
-    cursor.execute("""CREATE OR REPLACE VIEW omw AS
-                 SELECT x, CAST(SUM(wins) AS INTEGER) AS opponent_wins
-                 FROM games_won, (SELECT winner_id AS x, loser_id
-                                  AS opponent FROM matches
-                                  WHERE matches.tournament_id = %s
-                                  UNION
-                                  SELECT loser_id AS x, winner_id
-                                  AS opponent FROM matches
-                                  WHERE matches.tournament_id = %s
-                                  ORDER BY x ASC)
-                                  AS subQuery
-                 WHERE id = opponent
-                 GROUP BY x
-                 ORDER BY x;""", (tournament_id, tournament_id))
+    # see the views schema, as those are executed before the following:
 
     # Joins tables and returns standings -- sorted by wins, omw:
     # if tournament_id is specified, returns only players that have
